@@ -6,11 +6,11 @@ Gem::Specification.new do |s|
   s.name        = "openstack-swift"
   s.version     = Openstack::Swift::VERSION
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["TODO: Write your name"]
-  s.email       = ["TODO: Write your email address"]
+  s.authors     = ["morellon", "pothix"]
+  s.email       = ["morellon@gmail.com", "pothix@pothix.com"]
   s.homepage    = ""
-  s.summary     = %q{TODO: Write a gem summary}
-  s.description = %q{TODO: Write a gem description}
+  s.summary     = %q{Openstack's swift client}
+  s.description = %q{Openstack's swift client}
 
   s.rubyforge_project = "openstack-swift"
 

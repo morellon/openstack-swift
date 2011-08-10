@@ -1,4 +1,4 @@
-module Openstack
+module OpenStack
   module Swift
     # Your code goes here...
   end
