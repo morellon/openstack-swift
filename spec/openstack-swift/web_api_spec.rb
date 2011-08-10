@@ -1,6 +1,6 @@
 require "openstack-swift"
 
-URL = "https://swift-ip-here:8080/auth/v1.0"
+URL = "https://sw:8080/auth/v1.0"
 USER = "system:root"
 PASS = "testpass"
 
