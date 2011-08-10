@@ -1,4 +1,4 @@
-module OpenStack
+module Openstack
   module Swift
     VERSION = "0.0.1"
   end
