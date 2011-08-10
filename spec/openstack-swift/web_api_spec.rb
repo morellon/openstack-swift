@@ -23,9 +23,15 @@ describe Openstack::Swift::WebApi do
     end
   end
 
-  context "when listing account containers" do
+  context "when authenticate" do
     before do
       @url, _, @token = subject.auth(URL, USER, PASS)
+    end
+
+    it "should return account's details" do
+      subject.account(@url, @token).should have_key("bytes_used")
+      subject.account(@url, @token).should have_key("object_count")
+      subject.account(@url, @token).should have_key("container_count")
     end
 
     it "should return a list of container" do

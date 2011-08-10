@@ -10,6 +10,17 @@ module Openstack
         [res.headers["x-storage-url"],res.headers["x-storage-token"],res.headers["x-auth-token"]]
       end
 
+      def account(url, token)
+        query = {:format => "json"}
+        res = HTTParty.head(url, :headers => {'X-Auth-Token'=> token}, :query => query)
+        {
+          "bytes_used" => res.headers["x-account-bytes-used"],
+          "object_count" => res.headers["x-account-object-count"],
+          "container_count" => res.headers["x-account-container-count"]
+        }
+      end
+
+      # query options: marker, prefix, limit
       def account_containers(url, token, query = {})
         query = query.merge(:format => "json")
         res = HTTParty.get(url, :headers => {'X-Auth-Token'=> token}, :query => query)
