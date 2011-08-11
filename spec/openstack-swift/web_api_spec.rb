@@ -34,8 +34,12 @@ describe Openstack::Swift::WebApi do
       subject.account(@url, @token).should have_key("container_count")
     end
 
-    it "should return a list of container" do
-      subject.account_containers(@url, @token).should be_a(Array)
+    it "should return a list of containers" do
+      subject.containers(@url, @token).should be_a(Array)
+    end
+
+    it "should return a list of objects" do
+      subject.objects(@url, @token, "morellon").should be_a(Array)
     end
   end
 end

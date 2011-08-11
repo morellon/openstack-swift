@@ -21,9 +21,16 @@ module Openstack
       end
 
       # query options: marker, prefix, limit
-      def account_containers(url, token, query = {})
+      def containers(url, token, query = {})
         query = query.merge(:format => "json")
         res = HTTParty.get(url, :headers => {'X-Auth-Token'=> token}, :query => query)
+        res.to_a
+      end
+
+      # query options: marker, prefix, limit
+      def objects(url, token, container, query = {} )
+        query = query.merge(:format => "json")
+        res = HTTParty.get("#{url}/#{container}", :headers => {'X-Auth-Token'=> token}, :query => query)
         res.to_a
       end
     end
