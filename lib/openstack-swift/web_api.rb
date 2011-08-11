@@ -20,6 +20,10 @@ module Openstack
         }
       end
 
+      # List containers
+      # Note that swift only returns 1000 items, so to list more than this
+      # you should use the marker option as the name of the last returned item (1000th item)
+      # to return the next sequency (1001 - 2000)
       # query options: marker, prefix, limit
       def containers(url, token, query = {})
         query = query.merge(:format => "json")
