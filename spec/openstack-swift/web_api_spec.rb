@@ -39,7 +39,16 @@ describe Openstack::Swift::WebApi do
     end
 
     it "should return a list of objects" do
-      subject.objects(@url, @token, "morellon").should be_a(Array)
+      subject.objects(@url, @token, "morellon", :delimiter => "/").should be_a(Array)
+    end
+
+    it "should download an object" do
+      subject.download_object(@url, @token, "morellon", "Gemfile").should == "/tmp/swift/morellon/Gemfile"
+    end
+
+    it "should upload an object" do
+      File.open("/tmp/swift-dummy", "w") {|f| f.puts "test file"}
+      subject.upload_object(@url, @token, "morellon", "/tmp/swift-dummy").code.should == "201"
     end
   end
 end
