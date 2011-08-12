@@ -63,6 +63,7 @@ module Openstack
         file.close rescue nil
       end
 
+      # Uploads a given object to a given container
       def upload_object(url, token, container, file_path, object_name=nil)
         object_name ||= file_path.match(/.+\/(.+?)$/)[1]
         file = File.open(file_path, "rb")
