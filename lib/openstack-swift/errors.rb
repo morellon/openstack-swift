@@ -1,3 +1,3 @@
 module Openstack::Swift
-  class UnauthorizedError < Exception; end
+  class AuthenticationError < Exception; end
 end

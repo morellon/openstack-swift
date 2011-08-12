@@ -9,13 +9,25 @@ describe Openstack::Swift::WebApi do
     it "should authenticate on swift" do
       expect {
         subject.auth(URL, USER, PASS)
-      }.to_not raise_error Openstack::Swift::UnauthorizedError
+      }.to_not raise_error Openstack::Swift::AuthenticationError
+    end
+
+    it "should raise error for a invalid url" do
+      expect {
+        subject.auth("http://pothix.com/swift", USER, PASS)
+      }.to raise_error Openstack::Swift::AuthenticationError
+    end
+
+    it "should raise error for a invalid pass" do
+      expect {
+        subject.auth(URL, USER, "invalidpassword")
+      }.to raise_error Openstack::Swift::AuthenticationError
     end
 
     it "should raise error for a invalid user" do
       expect {
         subject.auth(URL, "system:weirduser", PASS)
-      }.to raise_error Openstack::Swift::UnauthorizedError
+      }.to raise_error Openstack::Swift::AuthenticationError
     end
 
     it "should return storage-url, storage-token and auth-token" do
