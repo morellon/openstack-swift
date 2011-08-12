@@ -23,7 +23,7 @@ describe Openstack::Swift::WebApi do
     end
   end
 
-  context "when authenticate" do
+  context "when authenticated" do
     before do
       @url, _, @token = subject.auth(URL, USER, PASS)
     end
