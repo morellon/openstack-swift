@@ -62,5 +62,24 @@ describe Openstack::Swift::WebApi do
       File.open("/tmp/swift-dummy", "w") {|f| f.puts "test file"}
       subject.upload_object(@url, @token, "morellon", "/tmp/swift-dummy").code.should == "201"
     end
+
+    it "should create a new container" do
+      subject.create_container(@url, @token, "pothix_container").should be_true
+    end
+
+    context "when excluding a container" do
+      before { @container = "pothix_container" }
+      it "should delete a existent container" do
+        subject.create_container(@url, @token, @container).should be_true
+        subject.delete_container(@url, @token, @container).should be_true
+      end
+
+      it "should raise an error when the container doesn't exist" do
+        expect {
+          subject.delete_container(@url, @token, @container).should be_true
+          subject.delete_container(@url, @token, @container).should be_true
+        }.to raise_error("Could not delete container '#{@container}'")
+      end
+    end
   end
 end

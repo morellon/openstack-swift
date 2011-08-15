@@ -32,10 +32,22 @@ module Openstack
       end
 
       # query options: marker, prefix, limit, delimiter
-      def objects(url, token, container, query = {} )
+      def objects(url, token, container, query = {})
         query = query.merge(:format => "json")
         res = HTTParty.get("#{url}/#{container}", :headers => {'X-Auth-Token'=> token}, :query => query)
         res.to_a
+      end
+
+      def delete_container(url, token, container)
+        res = HTTParty.delete("#{url}/#{container}", :headers => {'X-Auth-Token'=> token})
+        raise "Could not delete container '#{container}'" if res.code < 200 or res.code >= 300
+        true
+      end
+
+      def create_container(url, token, container)
+        res = HTTParty.put("#{url}/#{container}", :headers => {'X-Auth-Token'=> token})
+        raise "Could not create container '#{container}'" if res.code < 200 or res.code >= 300
+        true
       end
 
       # Downloads an object (file) to disk and returns the saved file path
