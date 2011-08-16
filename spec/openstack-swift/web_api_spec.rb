@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 require "openstack-swift"
 
 URL = "https://sw:8080/auth/v1.0"

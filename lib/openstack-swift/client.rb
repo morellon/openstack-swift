@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 module Openstack
   module Swift
     class Client

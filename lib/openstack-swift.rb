@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 require "httparty"
 require "net/http"
 require "net/https"
