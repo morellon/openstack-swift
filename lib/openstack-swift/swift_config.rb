@@ -9,7 +9,6 @@ module Openstack
 
     module_function
     def configs
-      puts @config_file.inspect
       @config_file ||= load_file
     end
 
