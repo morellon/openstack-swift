@@ -28,15 +28,21 @@ module Openstack
       def upload(container, file_path)
         if File.size(file_path) > MAX_SIZE
           full_file = File.open(file_path, "rb")
-          segments_minus_one = (File.size(file_path) / MAX_SIZE)
-          segments_minus_one.times do |i|
+          segments = (File.size(file_path) / MAX_SIZE) + 1
+          segments.times do |i|
             segment_path = "/tmp/swift/#{file_path}/#{i}"
-            segment_file = File.open(segment_path, "wb") {|f| f.write full_file.read(MAX_SIZE)}
-            Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", segment_path)
+            segment_file = File.open(segment_path, "wb") do |f|
+              buffer = MAX_SIZE / 1000
+              total_buffer = 0
+              while  total_buffer < MAX_SIZE
+                puts "total_buffer: #{total_buffer}"
+                content = full_file.read(buffer)
+                f.write content
+                total_buffer += buffer
+              end
+            end
+            # Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", segment_path)
           end
-          segment_path = "/tmp/swift/#{file_path}/#{segments_minus_one + 1}"
-          segment_file = File.open(segment_path, "wb") {|f| f.write full_file.read}
-          Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", segment_path)
           # manifest
         else
           Openstack::Swift::WebApi.upload_object(@url, @token, container, file_path)
