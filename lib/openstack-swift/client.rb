@@ -2,6 +2,7 @@
 module Openstack
   module Swift
     class Client
+      MAX_SIZE = 5 * 1000 ** 3
       # Authentication method
       # It stores the authentication url and token for future commands
       # Avoiding to request a new token for each request
@@ -25,7 +26,21 @@ module Openstack
 
       # This method uploads a file to a given container
       def upload(container, file_path)
-        Openstack::Swift::WebApi.upload_object(@url, @token, container, file_path)
+        if File.size(file_path) > MAX_SIZE
+          full_file = File.open(file_path, "rb")
+          segments_minus_one = (File.size(file_path) / MAX_SIZE)
+          segments_minus_one.times do |i|
+            segment_path = "/tmp/swift/#{file_path}/#{i}"
+            segment_file = File.open(segment_path, "wb") {|f| f.write full_file.read(MAX_SIZE)}
+            Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", segment_path)
+          end
+          segment_path = "/tmp/swift/#{file_path}/#{segments_minus_one + 1}"
+          segment_file = File.open(segment_path, "wb") {|f| f.write full_file.read}
+          Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", segment_path)
+          # manifest
+        else
+          Openstack::Swift::WebApi.upload_object(@url, @token, container, file_path)
+        end
       end
 
       # This method downloads a object from a given container
