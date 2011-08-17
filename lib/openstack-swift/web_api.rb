@@ -77,15 +77,16 @@ module Openstack
       end
 
       # Uploads a given object to a given container
-      def upload_object(url, token, container, file_path, object_name=nil)
+      def upload_object(url, token, container, file_path, position = nil, size = nil, object_name=nil)
         object_name ||= file_path.match(/.+\/(.+?)$/)[1]
         file = File.open(file_path, "rb")
+        file.seek(position) if position
         uri = URI.parse("#{url}/#{container}/#{object_name}")
 
         req = Net::HTTP::Put.new(uri.path)
         req.add_field('X-Auth-Token', token)
         req.body_stream = file
-        req.content_length = File.size(file_path)
+        req.content_length = size || File.size(file_path)
 
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
