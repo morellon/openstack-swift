@@ -1,4 +1,4 @@
-swift:
+:swift:
   :url: "https://sw:8080/auth/v1.0"
   :user: "system:root"
   :pass: "testpass"

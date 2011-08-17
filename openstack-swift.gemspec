@@ -21,4 +21,5 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency "rspec", "~> 2.6"
   s.add_development_dependency "httparty"
+  s.add_development_dependency "ruby-debug19"
 end

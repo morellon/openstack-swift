@@ -1,44 +1,44 @@
 # -*- coding: UTF-8 -*-
-require "openstack-swift"
-
-URL = "https://sw:8080/auth/v1.0"
-USER = "system:root"
-PASS = "testpass"
+require "spec_helper"
 
 describe Openstack::Swift::WebApi do
   context "when authenticating" do
     it "should authenticate on swift" do
       expect {
-        subject.auth(URL, USER, PASS)
+        subject.auth(Openstack::SwiftConfig[:url], Openstack::SwiftConfig[:user], Openstack::SwiftConfig[:pass])
       }.to_not raise_error Openstack::Swift::AuthenticationError
     end
 
     it "should raise error for a invalid url" do
       expect {
-        subject.auth("http://pothix.com/swift", USER, PASS)
+        subject.auth("http://pothix.com/swift", Openstack::SwiftConfig[:user], Openstack::SwiftConfig[:pass])
       }.to raise_error Openstack::Swift::AuthenticationError
     end
 
     it "should raise error for a invalid pass" do
       expect {
-        subject.auth(URL, USER, "invalidpassword")
+        subject.auth(Openstack::SwiftConfig[:url], Openstack::SwiftConfig[:user], "invalidpassword")
       }.to raise_error Openstack::Swift::AuthenticationError
     end
 
     it "should raise error for a invalid user" do
       expect {
-        subject.auth(URL, "system:weirduser", PASS)
+        subject.auth(Openstack::SwiftConfig[:url], "system:weirduser", Openstack::SwiftConfig[:pass])
       }.to raise_error Openstack::Swift::AuthenticationError
     end
 
     it "should return storage-url, storage-token and auth-token" do
-      subject.auth(URL, USER, PASS).should have(3).items
+      subject.auth(Openstack::SwiftConfig[:url], Openstack::SwiftConfig[:user], Openstack::SwiftConfig[:pass]).should have(3).items
     end
   end
 
   context "when authenticated" do
     before do
-      @url, _, @token = subject.auth(URL, USER, PASS)
+      @url, _, @token = subject.auth(
+        Openstack::SwiftConfig[:url],
+        Openstack::SwiftConfig[:user],
+        Openstack::SwiftConfig[:pass]
+      )
     end
 
     it "should return account's details" do
