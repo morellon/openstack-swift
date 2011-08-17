@@ -2,7 +2,7 @@
 module Openstack
   module Swift
     class Client
-      MAX_SIZE = 5 * 1000 ** 3
+      MAX_SIZE = 4 * 1024 ** 3
       # Authentication method
       # It stores the authentication url and token for future commands
       # Avoiding to request a new token for each request
@@ -28,25 +28,22 @@ module Openstack
       def upload(container, file_path)
         if File.size(file_path) > MAX_SIZE
           full_file = File.open(file_path, "rb")
-          segments = (File.size(file_path) / MAX_SIZE) + 1
-          segments.times do |i|
-            segment_path = "/tmp/swift/#{file_path}/#{i}"
-            segment_file = File.open(segment_path, "wb") do |f|
-              buffer = MAX_SIZE / 1000
-              total_buffer = 0
-              while  total_buffer < MAX_SIZE
-                puts "total_buffer: #{total_buffer}"
-                content = full_file.read(buffer)
-                f.write content
-                total_buffer += buffer
-              end
-            end
-            # Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", segment_path)
+          segments_minus_one = File.size(file_path) / MAX_SIZE
+          last_piece = File.size(file_path) - segments_minus_one * MAX_SIZE
+          segments_minus_one.times do |i|
+            segment_path = "#{file_path}/#{i}"
+            Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", file_path, MAX_SIZE * i, MAX_SIZE, segment_path)
           end
+
+          segment_path = "#{file_path}/#{segments_minus_one}"
+          Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", file_path, MAX_SIZE * segments_minus_one, last_piece, segment_path)
+
           # manifest
         else
           Openstack::Swift::WebApi.upload_object(@url, @token, container, file_path)
         end
+      ensure
+        full_file.close rescue nil
       end
 
       # This method downloads a object from a given container

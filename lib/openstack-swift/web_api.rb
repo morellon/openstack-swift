@@ -80,6 +80,7 @@ module Openstack
       def upload_object(url, token, container, file_path, position = nil, size = nil, object_name=nil)
         object_name ||= file_path.match(/.+\/(.+?)$/)[1]
         file = File.open(file_path, "rb")
+
         file.seek(position) if position
         uri = URI.parse("#{url}/#{container}/#{object_name}")
 
@@ -87,6 +88,7 @@ module Openstack
         req.add_field('X-Auth-Token', token)
         req.body_stream = file
         req.content_length = size || File.size(file_path)
+        req.content_type = "application/octet-stream"
 
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
