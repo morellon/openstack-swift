@@ -8,15 +8,13 @@ Gem::Specification.new do |s|
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["morellon", "pothix"]
   s.email       = ["morellon@gmail.com", "pothix@pothix.com"]
-  s.homepage    = ""
-  s.summary     = %q{Openstack's swift client}
+  s.homepage    = "http://github.com/morellon/openstack-swift"
   s.description = %q{Openstack's swift client}
+  s.summary     = s.description
 
   s.rubyforge_project = "openstack-swift"
 
-  s.files         = `git ls-files`.split("\n")
-  s.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
-  s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
+  s.files         = Dir["./**/*"].reject {|file| file =~ /\.git|pkg/}
   s.require_paths = ["lib"]
 
   s.add_development_dependency "rspec", "~> 2.6"
