@@ -52,19 +52,20 @@ module Openstack
         HTTParty.head(url, :headers => {"X-Auth-Token"=> token}, :query => query).headers
       end
 
-      def create_object_manifest(url, token, container, file_path)
+      def create_manifest(url, token, container, file_path)
         file_name = file_path.match(/.+\/(.+?)$/)[1]
         file_size  = File.size(file_path)
         file_mtime = File.mtime(file_path).to_f.round(2)
-        manifest_path = "#{container}_segments/#{file_name}/#{file_mtime}/#{file_size}/00000000"
+        manifest_path = "#{container}_segments/#{file_name}/#{file_mtime}/#{file_size}/"
 
-        res = HTTParty.put("#{url}/#{container}", :headers => {
+        res = HTTParty.put("#{url}/#{container}/#{file_name}", :headers => {
           "X-Auth-Token" => token,
           "x-object-manifest" => manifest_path,
-          "Content-Type" => "application/octet-stream"
+          "Content-Type" => "application/octet-stream",
+          "Content-Length" => "0"
         })
 
-        raise "Could not create manifest object '#{manifest_path}'" if res.code < 200 or res.code >= 300
+        raise "Could not create manifest for '#{file_path}'" if res.code < 200 or res.code >= 300
         true
       end
 

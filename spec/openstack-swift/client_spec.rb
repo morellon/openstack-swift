@@ -4,7 +4,7 @@ require "spec_helper"
 describe "Openstack::Swift::Client" do
   let!(:swift_dummy_file) do
     file_path = "/tmp/swift-dummy"
-    File.open(file_path, "w") {|f| f.puts("test file"*1000)}
+    File.open(file_path, "w") {|f| f.puts("testfile "*1000)}
     file_path
   end
 
@@ -26,8 +26,8 @@ describe "Openstack::Swift::Client" do
     subject { Openstack::Swift::Client.new(Openstack::SwiftConfig[:url], Openstack::SwiftConfig[:user], Openstack::SwiftConfig[:pass]) }
 
     it "should upload a splitted file and create its manifest" do
-      subject.upload("pothix", swift_dummy_file, {:segments_size => 1024*2})
-      subject.object_info("pothix", "swifty-dummy")
+      subject.upload("pothix2", swift_dummy_file, {:segments_size => 1024*2})
+      subject.object_info("pothix2", "swifty-dummy")
     end
 
     it "should return account's details" do

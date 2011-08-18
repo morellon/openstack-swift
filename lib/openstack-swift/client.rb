@@ -57,8 +57,7 @@ module Openstack
 
           segment_path = "#{file_path}/#{segments_minus_one}"
           Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", file_path, options[:segments_size] * segments_minus_one, last_piece, segment_path)
-
-          # manifest
+          Openstack::Swift::WebApi.create_manifest(@url, @token, container, file_path)
         else
           Openstack::Swift::WebApi.upload_object(@url, @token, container, file_path)
         end
