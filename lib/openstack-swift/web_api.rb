@@ -5,7 +5,7 @@ module Openstack
       extend self
 
       def auth(proxy, user, password)
-        res = HTTParty.get(proxy, :headers => {'X-Auth-User' => user, 'X-Auth-Key' => password})
+        res = HTTParty.get(proxy, :headers => {"X-Auth-User" => user, "X-Auth-Key" => password})
         raise AuthenticationError unless res.code == 200
 
         [res.headers["x-storage-url"],res.headers["x-storage-token"],res.headers["x-auth-token"]]
@@ -13,12 +13,7 @@ module Openstack
 
       def account(url, token)
         query = {:format => "json"}
-        res = HTTParty.head(url, :headers => {'X-Auth-Token'=> token}, :query => query)
-        {
-          "bytes_used" => res.headers["x-account-bytes-used"],
-          "object_count" => res.headers["x-account-object-count"],
-          "container_count" => res.headers["x-account-container-count"]
-        }
+        HTTParty.head(url, :headers => {"X-Auth-Token"=> token}, :query => query).headers
       end
 
       # List containers
@@ -28,26 +23,48 @@ module Openstack
       # query options: marker, prefix, limit
       def containers(url, token, query = {})
         query = query.merge(:format => "json")
-        res = HTTParty.get(url, :headers => {'X-Auth-Token'=> token}, :query => query)
+        res = HTTParty.get(url, :headers => {"X-Auth-Token"=> token}, :query => query)
         res.to_a
       end
 
       # query options: marker, prefix, limit, delimiter
       def objects(url, token, container, query = {})
         query = query.merge(:format => "json")
-        res = HTTParty.get("#{url}/#{container}", :headers => {'X-Auth-Token'=> token}, :query => query)
+        res = HTTParty.get("#{url}/#{container}", :headers => {"X-Auth-Token"=> token}, :query => query)
         res.to_a
       end
 
       def delete_container(url, token, container)
-        res = HTTParty.delete("#{url}/#{container}", :headers => {'X-Auth-Token'=> token})
+        res = HTTParty.delete("#{url}/#{container}", :headers => {"X-Auth-Token"=> token})
         raise "Could not delete container '#{container}'" if res.code < 200 or res.code >= 300
         true
       end
 
       def create_container(url, token, container)
-        res = HTTParty.put("#{url}/#{container}", :headers => {'X-Auth-Token'=> token})
+        res = HTTParty.put("#{url}/#{container}", :headers => {"X-Auth-Token"=> token})
         raise "Could not create container '#{container}'" if res.code < 200 or res.code >= 300
+        true
+      end
+
+      def object_stat(url, token, container, object)
+        url = "#{url}/#{container}/#{object}"
+        query = {:format => "json"}
+        HTTParty.head(url, :headers => {"X-Auth-Token"=> token}, :query => query).headers
+      end
+
+      def create_object_manifest(url, token, container, file_path)
+        file_name = file_path.match(/.+\/(.+?)$/)[1]
+        file_size  = File.size(file_path)
+        file_mtime = File.mtime(file_path).to_f.round(2)
+        manifest_path = "#{container}_segments/#{file_name}/#{file_mtime}/#{file_size}/00000000"
+
+        res = HTTParty.put("#{url}/#{container}", :headers => {
+          "X-Auth-Token" => token,
+          "x-object-manifest" => manifest_path,
+          "Content-Type" => "application/octet-stream"
+        })
+
+        raise "Could not create manifest object '#{manifest_path}'" if res.code < 200 or res.code >= 300
         true
       end
 
@@ -61,7 +78,7 @@ module Openstack
         uri = URI.parse("#{url}/#{container}/#{object}")
 
         req = Net::HTTP::Get.new(uri.path)
-        req.add_field('X-Auth-Token', token)
+        req.add_field("X-Auth-Token", token)
 
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
@@ -85,7 +102,7 @@ module Openstack
         uri = URI.parse("#{url}/#{container}/#{object_name}")
 
         req = Net::HTTP::Put.new(uri.path)
-        req.add_field('X-Auth-Token', token)
+        req.add_field("X-Auth-Token", token)
         req.body_stream = file
         req.content_length = size || File.size(file_path)
         req.content_type = "application/octet-stream"

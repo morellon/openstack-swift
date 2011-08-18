@@ -33,6 +33,8 @@ describe Openstack::Swift::WebApi do
   end
 
   context "when authenticated" do
+    let!(:swift_dummy_file){ File.open("/tmp/swift-dummy", "w") {|f| f.puts("test file"*1000)} }
+
     before do
       @url, _, @token = subject.auth(
         Openstack::SwiftConfig[:url],
@@ -41,10 +43,11 @@ describe Openstack::Swift::WebApi do
       )
     end
 
-    it "should return account's details" do
-      subject.account(@url, @token).should have_key("bytes_used")
-      subject.account(@url, @token).should have_key("object_count")
-      subject.account(@url, @token).should have_key("container_count")
+    it "should return account's headers" do
+      account = subject.account(@url, @token)
+      account.should have_key("x-account-bytes-used")
+      account.should have_key("x-account-object-count")
+      account.should have_key("x-account-container-count")
     end
 
     it "should return a list of containers" do
@@ -60,7 +63,6 @@ describe Openstack::Swift::WebApi do
     end
 
     it "should upload an object" do
-      File.open("/tmp/swift-dummy", "w") {|f| f.puts "test file"}
       subject.upload_object(@url, @token, "morellon", "/tmp/swift-dummy").code.should == "201"
     end
 
@@ -81,6 +83,16 @@ describe Openstack::Swift::WebApi do
           subject.delete_container(@url, @token, @container).should be_true
         }.to raise_error("Could not delete container '#{@container}'")
       end
+    end
+
+    it "should get the file stat" do
+      subject.upload_object(@url, @token, "morellon", "/tmp/swift-dummy")
+      headers = subject.object_stat(@url, @token, "morellon", "swift-dummy")
+
+      headers["last-modified"].should_not be_blank
+      headers["etag"].should_not be_blank
+      headers["content-type"].should_not be_blank
+      headers["date"].should_not be_blank
     end
   end
 end
