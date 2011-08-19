@@ -4,11 +4,16 @@ module Openstack
     class Client
       MAX_SIZE = 4 * 1024 ** 3
 
-      # Authentication method
+      # initialize method
       # It stores the authentication url and token for future commands
       # Avoiding to request a new token for each request
       def initialize(proxy, user, password)
-        @url, _, @token = Openstack::Swift::WebApi.auth(proxy, user, password)
+        @proxy, @user, @password = proxy, user, password
+        authenticate!
+      end
+
+      def authenticate!
+        @url, _, @token = Openstack::Swift::WebApi.auth(@proxy, @user, @password)
 
         if @url.blank? or @token.blank?
           raise AuthenticationError
@@ -31,18 +36,28 @@ module Openstack
       end
 
       # Returns the following informations about the account:
-      #   last-modified
-      #   etag
-      #   content-type
+      #   last_modified
+      #   md5
+      #   content_type
+      #   manifest
       def object_info(container, object)
         Openstack::Swift::WebApi.object_stat(@url, @token, container, object)
+        {
+          "last_modified" => headers["last-modified"],
+          "md5" => headers["etag"],
+          "content_type" => headers["content-type"],
+          "manifest" => headers["x-object-manifest"]
+        }
       end
 
       # This method uploads a file to a given container
       def upload(container, file_path, options={})
         options[:segments_size] ||= MAX_SIZE
 
+        Openstack::Swift::WebApi.create_container(@url, @token, container) rescue nil
+
         if File.size(file_path) > options[:segments_size]
+          Openstack::Swift::WebApi.create_container(@url, @token, "#{container}_segments") rescue nil
           file_name = file_path.match(/.+\/(.+?)$/)[1]
           file_size  = File.size(file_path)
           file_mtime = File.mtime(file_path).to_f.round(2)
@@ -55,7 +70,7 @@ module Openstack
             Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", file_path, options[:segments_size] * i, options[:segments_size], segment_path)
           end
 
-          segment_path = "#{file_path}/#{segments_minus_one}"
+          segment_path = "#{file_name}/#{file_mtime}/#{file_size}/%08d" % segments_minus_one
           Openstack::Swift::WebApi.upload_object(@url, @token, "#{container}_segments", file_path, options[:segments_size] * segments_minus_one, last_piece, segment_path)
           Openstack::Swift::WebApi.create_manifest(@url, @token, container, file_path)
         else

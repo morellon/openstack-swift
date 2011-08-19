@@ -72,6 +72,7 @@ describe Openstack::Swift::WebApi do
 
     context "when excluding a container" do
       before { @container = "pothix_container" }
+
       it "should delete a existent container" do
         subject.create_container(@url, @token, @container).should be_true
         subject.delete_container(@url, @token, @container).should be_true
