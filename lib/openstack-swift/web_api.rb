@@ -84,9 +84,15 @@ module Openstack
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = true
         http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+        md5 = Digest::MD5.new
 
         http.request(req) do |res|
-          res.read_body {|chunk| file.write chunk }
+          res.read_body do |chunk|
+            file.write chunk
+            md5.update(chunk)
+          end
+
+          raise "MD5 checksum failed for #{container}/#{object}" if res["x-object-manifest"].nil? && res["etag"] != md5.hexdigest
         end
 
         file_name

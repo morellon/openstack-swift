@@ -31,6 +31,12 @@ describe "Openstack::Swift::Client" do
       subject.object_info("pothix", "swifty-dummy")["manifest"].should_not be_nil
     end
 
+    it "should download an splitted file" do
+      content_length = subject.object_info("morellon", "splitted_file")["content_length"].to_i
+      file_path = subject.download("morellon", "splitted_file")
+      File.size(file_path).should == content_length
+    end
+
     it "should return account's details" do
       account_info = subject.account_info
       account_info.should have_key("bytes_used")

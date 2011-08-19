@@ -40,13 +40,15 @@ module Openstack
       #   md5
       #   content_type
       #   manifest
+      #   content_length
       def object_info(container, object)
-        Openstack::Swift::WebApi.object_stat(@url, @token, container, object)
+        headers = Openstack::Swift::WebApi.object_stat(@url, @token, container, object)
         {
           "last_modified" => headers["last-modified"],
           "md5" => headers["etag"],
           "content_type" => headers["content-type"],
-          "manifest" => headers["x-object-manifest"]
+          "manifest" => headers["x-object-manifest"],
+          "content_length" => headers["content-length"]
         }
       end
 
