@@ -17,7 +17,7 @@ describe "Openstack::Swift::Client" do
 
     it "shoud not need to authenticate again" do
       client = Openstack::Swift::Client.new(Openstack::SwiftConfig[:url], Openstack::SwiftConfig[:user], Openstack::SwiftConfig[:pass])
-      Openstack::Swift::WebApi.should_not_receive(:auth)
+      Openstack::Swift::Api.should_not_receive(:auth)
       client.account_info
     end
   end

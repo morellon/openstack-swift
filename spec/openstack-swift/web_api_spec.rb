@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 require "spec_helper"
 
-describe Openstack::Swift::WebApi do
+describe Openstack::Swift::Api do
   context "when authenticating" do
     it "should authenticate on swift" do
       expect {

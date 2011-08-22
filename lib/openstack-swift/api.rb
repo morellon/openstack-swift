@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*-
 module Openstack
   module Swift
-    module WebApi
+    module Api
       extend self
 
       # Authentication method to get the url and token to conect to swift
