@@ -62,45 +62,59 @@ module Openstack
 
         SWIFT_API.create_container(@url, @token, container) rescue nil
 
-        if File.size(file_path) > options[:segments_size]
-          SWIFT_API.create_container(@url, @token, "#{container}_segments") rescue nil
-          file_name = file_path.match(/.+\/(.+?)$/)[1]
-          file_size  = File.size(file_path)
-          file_mtime = File.mtime(file_path).to_f.round(2)
+        file_name, file_mtime, file_size  = file_info(file_path)
 
-          full_file = File.open(file_path, "rb")
-          segments_minus_one = File.size(file_path) / options[:segments_size]
-          last_piece = File.size(file_path) - segments_minus_one * options[:segments_size]
-          segments_minus_one.times do |i|
-            segment_path = "#{file_name}/#{file_mtime}/#{file_size}/%08d" % i
+        if file_size > options[:segments_size]
+          SWIFT_API.create_container(@url, @token, "#{container}_segments") rescue nil
+
+          segments_minus_one = file_size / options[:segments_size]
+          last_piece = file_size - segments_minus_one * options[:segments_size]
+          segments_minus_one.times do |segment|
+            upload_path_for(file_path, segment)
             SWIFT_API.upload_object(
               @url, @token, "#{container}_segments", file_path,
               :size => options[:segments_size],
-              :position => options[:segments_size] * i,
+              :position => options[:segments_size] * segment,
               :object_name => segment_path
             )
           end
-
-          segment_path = "#{file_name}/#{file_mtime}/#{file_size}/%08d" % segments_minus_one
 
           SWIFT_API.upload_object(
             @url, @token, "#{container}_segments", file_path,
             :size => last_piece,
             :position => options[:segments_size] * segments_minus_one,
-            :object_name => segment_path
+            :object_name => upload_path_for(file_path, segments_minus_one)
           )
 
           SWIFT_API.create_manifest(@url, @token, container, file_path)
         else
           SWIFT_API.upload_object(@url, @token, container, file_path)
         end
-      ensure
-        full_file.close rescue nil
       end
 
       # This method downloads a object from a given container
       def download(container, object)
         SWIFT_API.download_object(@url, @token, container, object)
+      end
+
+     private
+
+      # Returns the standard swift path for a given file path and segment
+      def upload_path_for(file_path, segment)
+        "%s/%s/s/%08d" % (file_info(file_path) << segment)
+      end
+
+      # Get relevant informations about a file
+      # Returns an array with:
+      #   file_name
+      #   file_mtime
+      #   file_size
+      def file_info(file_path)
+        [
+          file_path.match(/.+\/(.+?)$/)[1],
+          File.mtime(file_path).to_f.round(2),
+          File.size(file_path)
+        ]
       end
     end
   end
