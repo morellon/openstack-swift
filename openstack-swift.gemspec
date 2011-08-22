@@ -17,7 +17,7 @@ Gem::Specification.new do |s|
   s.files         = Dir["./**/*"].reject {|file| file =~ /\.git|pkg/}
   s.require_paths = ["lib"]
 
+  s.add_dependency "httparty"
   s.add_development_dependency "rspec", "~> 2.6"
-  s.add_development_dependency "httparty"
   s.add_development_dependency "ruby-debug19"
 end
