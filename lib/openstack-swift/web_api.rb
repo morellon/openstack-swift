@@ -4,6 +4,11 @@ module Openstack
     module WebApi
       extend self
 
+      # Authentication method to get the url and token to conect to swift
+      # Returns:
+      #   x-storage-url
+      #   x-storage-token
+      #   x-auth-token
       def auth(proxy, user, password)
         res = HTTParty.get(proxy, :headers => {"X-Auth-User" => user, "X-Auth-Key" => password})
         raise AuthenticationError unless res.code == 200
@@ -11,6 +16,11 @@ module Openstack
         [res.headers["x-storage-url"],res.headers["x-storage-token"],res.headers["x-auth-token"]]
       end
 
+      # Get informations about the currect account used to connect to swift
+      # Returns:
+      #   x-account-bytes-used
+      #   x-account-object-count
+      #   x-account-container-count
       def account(url, token)
         query = {:format => "json"}
         HTTParty.head(url, :headers => {"X-Auth-Token"=> token}, :query => query).headers
@@ -27,31 +37,42 @@ module Openstack
         res.to_a
       end
 
-      # query options: marker, prefix, limit, delimiter
+      # Get all objects for a given container
+      # Query options:
+      #   marker
+      #   prefix
+      #   limit
+      #   delimiter
       def objects(url, token, container, query = {})
         query = query.merge(:format => "json")
         res = HTTParty.get("#{url}/#{container}", :headers => {"X-Auth-Token"=> token}, :query => query)
         res.to_a
       end
 
+      # Delete a container for a given name from swift
       def delete_container(url, token, container)
         res = HTTParty.delete("#{url}/#{container}", :headers => {"X-Auth-Token"=> token})
         raise "Could not delete container '#{container}'" if res.code < 200 or res.code >= 300
         true
       end
 
+      # Create a container on swift from a given name
       def create_container(url, token, container)
         res = HTTParty.put("#{url}/#{container}", :headers => {"X-Auth-Token"=> token})
         raise "Could not create container '#{container}'" if res.code < 200 or res.code >= 300
         true
       end
 
+      # Get the object stat given the object name and the container this object is in
       def object_stat(url, token, container, object)
         url = "#{url}/#{container}/#{object}"
         query = {:format => "json"}
         HTTParty.head(url, :headers => {"X-Auth-Token"=> token}, :query => query).headers
       end
 
+      # Creates the manifest file for a splitted upload
+      # Given the container and file path a manifest is created to guide the downloads of this
+      # splitted file
       def create_manifest(url, token, container, file_path)
         file_name = file_path.match(/.+\/(.+?)$/)[1]
         file_size  = File.size(file_path)
@@ -101,17 +122,17 @@ module Openstack
       end
 
       # Uploads a given object to a given container
-      def upload_object(url, token, container, file_path, position = nil, size = nil, object_name=nil)
-        object_name ||= file_path.match(/.+\/(.+?)$/)[1]
+      def upload_object(url, token, container, file_path, options={})
+        options[:object_name] ||= file_path.match(/.+\/(.+?)$/)[1]
         file = File.open(file_path, "rb")
 
-        file.seek(position) if position
-        uri = URI.parse("#{url}/#{container}/#{object_name}")
+        file.seek(options[:position]) if options[:position]
+        uri = URI.parse("#{url}/#{container}/#{options[:object_name]}")
 
         req = Net::HTTP::Put.new(uri.path)
         req.add_field("X-Auth-Token", token)
         req.body_stream = file
-        req.content_length = size || File.size(file_path)
+        req.content_length = options[:size] || File.size(file_path)
         req.content_type = "application/octet-stream"
 
         http = Net::HTTP.new(uri.host, uri.port)
