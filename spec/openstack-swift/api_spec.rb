@@ -70,10 +70,19 @@ describe Openstack::Swift::Api do
       subject.create_container(@url, @token, "pothix_container").should be_true
     end
 
+    context "whe excluding an object" do
+       before { @container = "morellon" }
+       
+      it "should delete an existent object" do
+        subject.upload_object(@url, @token, @container, "/tmp/swift-dummy").should be_true
+        subject.delete_object(@url, @token, @container, "swift-dummy").should be_true
+      end
+    end
+
     context "when excluding a container" do
       before { @container = "pothix_container" }
 
-      it "should delete a existent container" do
+      it "should delete an existent container" do
         subject.create_container(@url, @token, @container).should be_true
         subject.delete_container(@url, @token, @container).should be_true
       end

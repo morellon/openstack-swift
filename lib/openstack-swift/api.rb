@@ -121,6 +121,13 @@ module Openstack
         file.close rescue nil
       end
 
+      # Delete a container for a given name from swift
+      def delete_object(url, token, container, object)
+        res = HTTParty.delete("#{url}/#{container}/#{object}", :headers => {"X-Auth-Token"=> token})
+        raise "Could not delete object '#{object}'" if res.code < 200 or res.code >= 300
+        true
+      end
+
       # Uploads a given object to a given container
       def upload_object(url, token, container, file_path, options={})
         options[:object_name] ||= file_path.match(/.+\/(.+?)$/)[1]

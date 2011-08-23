@@ -2,7 +2,6 @@
 module Openstack
   module Swift
     class Client
-      SWIFT_API = Openstack::Swift::Api
       MAX_SIZE = 4 * 1024 ** 3
 
       # Initialize method
@@ -17,7 +16,7 @@ module Openstack
       # avoiding to request a new token for each request
       # It should be used to force a new token
       def authenticate!
-        @url, _, @token = SWIFT_API.auth(@proxy, @user, @password)
+        @url, _, @token = Api.auth(@proxy, @user, @password)
 
         if @url.blank? or @token.blank?
           raise AuthenticationError
@@ -31,7 +30,7 @@ module Openstack
       #   object_count: Number of objects that this account have allocated
       #   container_count: Number of container
       def account_info
-        headers = SWIFT_API.account(@url, @token)
+        headers = Api.account(@url, @token)
         {
           "bytes_used" => headers["x-account-bytes-used"],
           "object_count" => headers["x-account-object-count"],
@@ -46,7 +45,7 @@ module Openstack
       #   manifest
       #   content_length
       def object_info(container, object)
-        headers = SWIFT_API.object_stat(@url, @token, container, object)
+        headers = Api.object_stat(@url, @token, container, object)
         {
           "last_modified" => headers["last-modified"],
           "md5" => headers["etag"],
@@ -60,18 +59,18 @@ module Openstack
       def upload(container, file_path, options={})
         options[:segments_size] ||= MAX_SIZE
 
-        SWIFT_API.create_container(@url, @token, container) rescue nil
+        Api.create_container(@url, @token, container) rescue nil
 
         file_name, file_mtime, file_size  = file_info(file_path)
 
         if file_size > options[:segments_size]
-          SWIFT_API.create_container(@url, @token, "#{container}_segments") rescue nil
+          Api.create_container(@url, @token, "#{container}_segments") rescue nil
 
           segments_minus_one = file_size / options[:segments_size]
           last_piece = file_size - segments_minus_one * options[:segments_size]
           segments_minus_one.times do |segment|
             upload_path_for(file_path, segment)
-            SWIFT_API.upload_object(
+            Api.upload_object(
               @url, @token, "#{container}_segments", file_path,
               :size => options[:segments_size],
               :position => options[:segments_size] * segment,
@@ -79,22 +78,22 @@ module Openstack
             )
           end
 
-          SWIFT_API.upload_object(
+          Api.upload_object(
             @url, @token, "#{container}_segments", file_path,
             :size => last_piece,
             :position => options[:segments_size] * segments_minus_one,
             :object_name => upload_path_for(file_path, segments_minus_one)
           )
 
-          SWIFT_API.create_manifest(@url, @token, container, file_path)
+          Api.create_manifest(@url, @token, container, file_path)
         else
-          SWIFT_API.upload_object(@url, @token, container, file_path)
+          Api.upload_object(@url, @token, container, file_path)
         end
       end
 
       # This method downloads a object from a given container
       def download(container, object)
-        SWIFT_API.download_object(@url, @token, container, object)
+        Api.download_object(@url, @token, container, object)
       end
 
      private
