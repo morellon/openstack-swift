@@ -96,6 +96,19 @@ module Openstack
         Api.download_object(@url, @token, container, object)
       end
 
+      # Delete a given object from a given container
+      def delete(container, object)
+        object_info    = Api.object_stat(@url, @token, container, object)
+        manifest_file  = object_info["manifest"]
+        content_length = object_info["content_length"].to_i
+
+        if manifest_file
+          Api.delete_from_manifest(@url, @token, manifest_info)
+        else
+          Api.delete(@url, @token, container, object)
+        end
+      end
+
      private
 
       # Returns the standard swift path for a given file path and segment

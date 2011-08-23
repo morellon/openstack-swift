@@ -33,7 +33,7 @@ describe Openstack::Swift::Api do
   end
 
   context "when authenticated" do
-    let!(:swift_dummy_file){ File.open("/tmp/swift-dummy", "w") {|f| f.puts("test file"*1000)} }
+    let!(:swift_dummy_file){ File.open("/tmp/swift-dummy", "w") {|f| f.puts("test file"*2000)} }
 
     before do
       @url, _, @token = subject.auth(
@@ -71,12 +71,16 @@ describe Openstack::Swift::Api do
     end
 
     context "whe excluding an object" do
-       before { @container = "morellon" }
-       
+      before { @container = "morellon" }
+
       it "should delete an existent object" do
         subject.upload_object(@url, @token, @container, "/tmp/swift-dummy").should be_true
         subject.delete_object(@url, @token, @container, "swift-dummy").should be_true
       end
+    end
+
+    context "when excluding all objects from a manifest" do
+      it "should remove all objects from a given manifest"
     end
 
     context "when excluding a container" do

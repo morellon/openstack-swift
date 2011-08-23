@@ -121,10 +121,24 @@ module Openstack
         file.close rescue nil
       end
 
-      # Delete a container for a given name from swift
+      # Delete a object for a given container and object name
       def delete_object(url, token, container, object)
         res = HTTParty.delete("#{url}/#{container}/#{object}", :headers => {"X-Auth-Token"=> token})
         raise "Could not delete object '#{object}'" if res.code < 200 or res.code >= 300
+        true
+      end
+
+      # Delete all files listed on a manifest following the swift standard order
+      # What it does is try to delete manifest files in sequence until there are no files to delete
+      # returning a 404 error code. We don't know how many files are stored for a manifest file.
+      def delete_objects_from_manifest(url, token, manifest_info)
+        files_path = "#{manifest_info["manifest"]}%08d"
+
+        manifest_info["content_length"].to_i.times do |index|
+          res = HTTParty.delete("#{url}/#{files_path % index}", :headers => {"X-Auth-Token"=> token})
+          raise ObjectNotFoundError if res.code == 404
+        end
+      rescue ObjectNotFoundError
         true
       end
 
