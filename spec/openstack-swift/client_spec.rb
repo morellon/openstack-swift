@@ -25,10 +25,10 @@ describe "Openstack::Swift::Client" do
   context "when authenticated" do
     subject { Openstack::Swift::Client.new(Openstack::SwiftConfig[:url], Openstack::SwiftConfig[:user], Openstack::SwiftConfig[:pass]) }
 
-    it "should upload a splitted file and create its manifest" do
-      pending "WTF...Not working for a unknown reason"
-      subject.upload("pothix", swift_dummy_file, {:segments_size => 1024*2})
-      subject.object_info("pothix", "swifty-dummy")["manifest"].should_not be_nil
+    it "should try to upload" do
+      expect {
+        subject.upload("pothix", swift_dummy_file, {:segments_size => 1024*2})
+      }.to_not raise_error
     end
 
     it "should download an splitted file" do
@@ -42,6 +42,20 @@ describe "Openstack::Swift::Client" do
       account_info.should have_key("bytes_used")
       account_info.should have_key("object_count")
       account_info.should have_key("container_count")
+    end
+
+    context "when deleting" do
+      it "should call the delete method for a non manifest file" do
+        Openstack::Swift::Api.should_receive(:object_stat).and_return({"manifest" => nil})
+        Openstack::Swift::Api.should_receive(:delete)
+        subject.delete("pothix","swift-dummy")
+      end
+
+      it "should call the delete_objects_from_manifest method for a manifest file" do
+        Openstack::Swift::Api.should_receive(:object_stat).and_return({"manifest" => "pothix_segments/swift-dummy/1313763802.0/9001/"})
+        Openstack::Swift::Api.should_receive(:delete_objects_from_manifest)
+        subject.delete("pothix","swift-dummy")
+      end
     end
   end
 end

@@ -74,7 +74,7 @@ module Openstack
               @url, @token, "#{container}_segments", file_path,
               :size => options[:segments_size],
               :position => options[:segments_size] * segment,
-              :object_name => segment_path
+              :object_name => upload_path_for(file_path, segment)
             )
           end
 
@@ -98,12 +98,10 @@ module Openstack
 
       # Delete a given object from a given container
       def delete(container, object)
-        object_info    = Api.object_stat(@url, @token, container, object)
-        manifest_file  = object_info["manifest"]
-        content_length = object_info["content_length"].to_i
+        object_info = Api.object_stat(@url, @token, container, object)
 
-        if manifest_file
-          Api.delete_from_manifest(@url, @token, manifest_info)
+        if object_info["manifest"]
+          Api.delete_objects_from_manifest(@url, @token, object_info)
         else
           Api.delete(@url, @token, container, object)
         end
