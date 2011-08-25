@@ -29,6 +29,7 @@ describe "Openstack::Swift::Client" do
       expect {
         subject.upload("pothix", swift_dummy_file, {:segments_size => 1024*2})
       }.to_not raise_error
+      subject.object_info("pothix", "swift-dummy")["manifest"].should_not be_nil
     end
 
     it "should download an splitted file" do
@@ -46,13 +47,13 @@ describe "Openstack::Swift::Client" do
 
     context "when deleting" do
       it "should call the delete method for a non manifest file" do
-        Openstack::Swift::Api.should_receive(:object_stat).and_return({"manifest" => nil})
-        Openstack::Swift::Api.should_receive(:delete)
+        Openstack::Swift::Api.should_receive(:object_stat).and_return({"x-object-manifest" => nil})
+        Openstack::Swift::Api.should_receive(:delete_object)
         subject.delete("pothix","swift-dummy")
       end
 
       it "should call the delete_objects_from_manifest method for a manifest file" do
-        Openstack::Swift::Api.should_receive(:object_stat).and_return({"manifest" => "pothix_segments/swift-dummy/1313763802.0/9001/"})
+        Openstack::Swift::Api.should_receive(:object_stat).and_return({"x-object-manifest" => "pothix_segments/swift-dummy/1313763802.0/9001/"})
         Openstack::Swift::Api.should_receive(:delete_objects_from_manifest)
         subject.delete("pothix","swift-dummy")
       end

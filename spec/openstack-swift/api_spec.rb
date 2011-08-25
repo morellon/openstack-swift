@@ -33,7 +33,7 @@ describe Openstack::Swift::Api do
   end
 
   context "when authenticated" do
-    let!(:swift_dummy_file){ File.open("/tmp/swift-dummy", "w") {|f| f.puts("test file"*2000)} }
+    let!(:swift_dummy_file){ File.open("/tmp/swift-dummy", "w") {|f| f.puts("test file"*2000)}; "/tmp/swift-dummy" }
 
     before do
       @url, _, @token = subject.auth(
@@ -80,7 +80,15 @@ describe Openstack::Swift::Api do
     end
 
     context "when excluding all objects from a manifest" do
-      it "should remove all objects from a given manifest"
+      it "should remove all objects from a given manifest" do
+        container = "multiseg"
+        subject.upload_object(@url, @token, container, swift_dummy_file, {:segments_size => 1024})
+        manifest = subject.object_stat(@url, @token, container, "swift-dummy")["x-object-manifest"]
+        segment_path = manifest.split("/")[1..-1].join("/") + "/00000000"
+        subject.object_stat(@url, @token, "#{container}_segments", segment_path)["etag"].should_not be_nil
+        subject.delete_objects_from_manifest(@url, @token, container, "swift-dummy").should be_true
+        subject.object_stat(@url, @token, "#{container}_segments", segment_path)["etag"].should be_nil
+      end
     end
 
     context "when excluding a container" do

@@ -3,6 +3,7 @@ module Openstack
   module Swift
     module Api
       extend self
+      MAX_SIZE = 4 * 1024 ** 3
 
       # Authentication method to get the url and token to conect to swift
       # Returns:
@@ -131,7 +132,8 @@ module Openstack
       # Delete all files listed on a manifest following the swift standard order
       # What it does is try to delete all files in sequence from a given manifest until there are no files to delete
       # returning a 404 error code. We don't know how many files are stored for a manifest file.
-      def delete_objects_from_manifest(url, token, manifest_info)
+      def delete_objects_from_manifest(url, token, container, manifest)
+        manifest_info = object_stat(url, token, container, manifest)
         files_path = "#{manifest_info["x-object-manifest"]}%08d"
 
         manifest_info["content-length"].to_i.times do |index|
@@ -142,8 +144,42 @@ module Openstack
         true
       end
 
-      # Uploads a given object to a given container
       def upload_object(url, token, container, file_path, options={})
+        options[:segments_size] ||= MAX_SIZE
+
+        create_container(url, token, container) rescue nil
+
+        file_name, file_mtime, file_size  = file_info(file_path)
+
+        if file_size > options[:segments_size]
+          create_container(url, token, "#{container}_segments") rescue nil
+
+          segments_minus_one = file_size / options[:segments_size]
+          last_piece = file_size - segments_minus_one * options[:segments_size]
+          segments_minus_one.times do |segment|
+            upload_segment(
+              url, token, "#{container}_segments", file_path,
+              :size => options[:segments_size],
+              :position => options[:segments_size] * segment,
+              :object_name => upload_path_for(file_path, segment)
+            )
+          end
+
+          upload_segment(
+            url, token, "#{container}_segments", file_path,
+            :size => last_piece,
+            :position => options[:segments_size] * segments_minus_one,
+            :object_name => upload_path_for(file_path, segments_minus_one)
+          )
+
+          create_manifest(url, token, container, file_path)
+        else
+          upload_segment(url, token, container, file_path)
+        end
+      end
+
+      # Uploads a given object to a given container
+      def upload_segment(url, token, container, file_path, options={})
         options[:object_name] ||= file_path.match(/.+\/(.+?)$/)[1]
         file = File.open(file_path, "rb")
 
@@ -162,6 +198,25 @@ module Openstack
         http.request(req)
       ensure
         file.close rescue nil
+      end
+
+      private
+      # Returns the standard swift path for a given file path and segment
+      def upload_path_for(file_path, segment)
+       "%s/%s/%s/%08d" % (file_info(file_path) << segment)
+      end
+
+      # Get relevant informations about a file
+      # Returns an array with:
+      #   file_name
+      #   file_mtime
+      #   file_size
+      def file_info(file_path)
+       [
+         file_path.match(/.+\/(.+?)$/)[1],
+         File.mtime(file_path).to_f.round(2),
+         File.size(file_path)
+       ]
       end
     end
   end
