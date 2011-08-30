@@ -59,8 +59,8 @@ module Openstack
       end
 
       # This method downloads a object from a given container
-      def download(container, object)
-        Api.download_object(@url, @token, container, object)
+      def download(container, object, options={})
+        Api.download_object(@url, @token, container, object, options[:file_path])
       end
 
       # Delete a given object from a given container
