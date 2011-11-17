@@ -23,10 +23,10 @@ module Openstack
         end
       end
 
-      # Returns the following informations about the object:
+      # Returns the following informations about the account:
       #   bytes_used: Number of bytes used by this account
       #   object_count: Number of objects that this account have allocated
-      #   container_count: Number of container
+      #   container_count: Number of containers
       def account_info
         headers = Api.account(@url, @token)
         {
@@ -36,7 +36,7 @@ module Openstack
         }
       end
 
-      # Returns the following informations about the account:
+      # Returns the following informations about the object:
       #   last_modified
       #   md5
       #   content_type
