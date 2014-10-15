@@ -75,9 +75,7 @@ module Openstack
       # Given the container and file path a manifest is created to guide the downloads of this
       # splitted file
       def create_manifest(url, token, container, file_path)
-        file_name = file_path.match(/.+\/(.+?)$/)[1]
-        file_size  = File.size(file_path)
-        file_mtime = File.mtime(file_path).to_f.round(2)
+        file_name, file_mtime, file_size = file_info(file_path)
         manifest_path = "#{container}_segments/#{file_name}/#{file_mtime}/#{file_size}/"
 
         res = HTTParty.put("#{url}/#{container}/#{file_name}", :headers => {
